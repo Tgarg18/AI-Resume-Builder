@@ -8,7 +8,7 @@ const connectDB = async () => {
     });
 
     let mongodbURI = process.env.MONGODB_URI;
-    const projectName = "resume-builder";
+    const projectName = process.env.PROJECT_NAME;
     if (!mongodbURI) {
       throw new Error("MONGODB_URI enviorment variable not set");
     }
