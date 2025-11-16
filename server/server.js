@@ -1,3 +1,31 @@
+// import express from "express";
+// import cors from "cors";
+// import "dotenv/config";
+// import connectDB from "./configs/db.js";
+// import userRouter from "./routes/userRoutes.js";
+// import resumeRouter from "./routes/resumeRoutes.js";
+// import geminiRouter from "./routes/geminiRoutes.js";
+
+// const app = express();
+// const PORT = process.env.PORT || 3000;
+// //Database Connection
+// await connectDB();
+
+// // MiddleWare
+// app.use(express.json());
+// app.use(cors());
+
+// app.get("/", (req, res) => res.send("Server is Live"));
+
+// app.use("/api/users", userRouter);
+// app.use("/api/resumes", resumeRouter);
+// app.use("/api/ai", geminiRouter);
+
+// app.listen(PORT, () => {
+//   console.log(`Server is running on port ${PORT}`);
+// });
+
+
 import express from "express";
 import cors from "cors";
 import "dotenv/config";
@@ -8,19 +36,33 @@ import geminiRouter from "./routes/geminiRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-//Database Connection
+
+// Database Connection
 await connectDB();
 
-// MiddleWare
-app.use(express.json());
-app.use(cors());
+// --- FIXES ADDED HERE ONLY ---
+// Proper body parser
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true }));
 
+// Correct CORS config to allow JSON requests from frontend
+app.use(
+  cors({
+    origin: "*",                     // Allow all origins (or restrict to your domain)
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+// Test route
 app.get("/", (req, res) => res.send("Server is Live"));
 
+// Routes
 app.use("/api/users", userRouter);
 app.use("/api/resumes", resumeRouter);
 app.use("/api/ai", geminiRouter);
 
+// Start Server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
