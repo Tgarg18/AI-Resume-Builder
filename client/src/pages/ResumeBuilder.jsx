@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
-import { dummyResumeData } from "../assets/assets";
 import {
   ArrowLeftIcon,
   Briefcase,
@@ -30,6 +29,7 @@ import { useSelector } from "react-redux";
 const ResumeBuilder = () => {
   const { resumeId } = useParams();
   const { user, token } = useSelector((state) => state.auth);
+  const previewRef = useRef(null);
 
   const [resumeData, setResumeData] = useState({
     _id: "",
@@ -44,6 +44,7 @@ const ResumeBuilder = () => {
     accent_color: "#3B82F6",
     public: false,
   });
+
   const loadExistingResume = async () => {
     try {
       const { data } = await api.get("/api/resumes/get/" + resumeId, {
@@ -60,6 +61,7 @@ const ResumeBuilder = () => {
       window.location.href = "/view/" + resumeId;
     }
   };
+
   const sections = [
     { id: "personal", name: "Personal Info", icon: User },
     { id: "summary", name: "Summary", icon: FileText },
@@ -68,6 +70,7 @@ const ResumeBuilder = () => {
     { id: "project", name: "Projects", icon: FolderIcon },
     { id: "skill", name: "Skill", icon: Sparkles },
   ];
+
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
   const [removeBackground, setRemoveBackground] = useState(false);
 
@@ -78,8 +81,67 @@ const ResumeBuilder = () => {
   }, []);
 
   const downloader = () => {
-    window.print();
+    if (!previewRef.current) return;
+
+    const previewHTML = previewRef.current.innerHTML;
+
+    const printWindow = window.open("", "_blank", "width=800,height=900");
+
+    printWindow.document.open();
+    printWindow.document.write(`
+    <html>
+      <head>
+        <title>${resumeData.title || "Resume"}</title>
+
+        <!-- Include your Tailwind/main CSS -->
+        <link rel="stylesheet" href="/src/index.css" />
+
+        <style>
+          @page {
+            size: A4;
+            margin: 12mm;
+          }
+          body {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          #resume {
+            width: 100%;
+          }
+        </style>
+      </head>
+
+      <body>
+        <div id="resume">${previewHTML}</div>
+
+        <script>
+          // Wait until content and CSS fully load
+          window.onload = function () {
+            // Trigger the system print dialog
+            window.print();
+
+            // Close the popup after printing finishes
+            if (window.matchMedia) {
+              const mediaQuery = window.matchMedia("print");
+
+              mediaQuery.addListener(function(mql) {
+                if (!mql.matches) window.close();
+              });
+            }
+
+            // Fallback (guaranteed) – closes the window after print dialog closes
+            window.onafterprint = function () {
+              window.close();
+            };
+          };
+        </script>
+      </body>
+    </html>
+  `);
+
+    printWindow.document.close();
   };
+
   const saveChanges = async () => {
     try {
       let updatedResumeData = structuredClone(resumeData);
@@ -127,9 +189,8 @@ const ResumeBuilder = () => {
               <hr
                 className="absolute top-0 left-0 h-1 bg-gradient-to-r from-green-500 to-green-600 border-none transition-all duration-2000"
                 style={{
-                  width: `${
-                    (activeSectionIndex * 100) / (sections.length - 1)
-                  }%`,
+                  width: `${(activeSectionIndex * 100) / (sections.length - 1)
+                    }%`,
                 }}
               />
               {/* -------- Section Navigation ------------  */}
@@ -171,9 +232,8 @@ const ResumeBuilder = () => {
                         Math.min(prevIndex + 1, sections.length - 1)
                       )
                     }
-                    className={`flex items-center gap-1 p-3 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-all ${
-                      activeSectionIndex === sections.length - 1 && "opacity-50"
-                    }`}
+                    className={`flex items-center gap-1 p-3 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-all ${activeSectionIndex === sections.length - 1 && "opacity-50"
+                      }`}
                     disabled={activeSectionIndex === sections.length - 1}
                   >
                     Next <ChevronRight className="size-4" />
@@ -270,6 +330,7 @@ const ResumeBuilder = () => {
             </div>
             {/* === Resume Preview ===*/}
             <ResumePreview
+              ref={previewRef}
               data={resumeData}
               template={resumeData?.template}
               accentColor={resumeData?.accent_color}

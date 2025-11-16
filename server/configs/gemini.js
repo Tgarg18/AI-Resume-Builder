@@ -1,8 +1,9 @@
-import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const gemini = new OpenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-  baseURL: process.env.BASE_URL,
-});
+if (!process.env.GEMINI_API_KEY) {
+  throw new Error("Missing GEMINI_API_KEY in environment");
+}
+
+const gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 export default gemini;
